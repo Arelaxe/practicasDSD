@@ -1,0 +1,15 @@
+\babel@toc {spanish}{}
+\contentsline {section}{\numberline {1}Introducci\IeC {\'o}n}{2}
+\contentsline {section}{\numberline {2}Operaciones b\IeC {\'a}sicas}{3}
+\contentsline {section}{\numberline {3}Operaciones con vectores}{3}
+\contentsline {subsection}{\numberline {3.1}Producto escalar}{4}
+\contentsline {subsection}{\numberline {3.2}Suma de vectores}{5}
+\contentsline {subsection}{\numberline {3.3}Resta de vectores}{6}
+\contentsline {subsection}{\numberline {3.4}Producto vectorial}{7}
+\contentsline {subsection}{\numberline {3.5}Producto mixto}{8}
+\contentsline {subsection}{\numberline {3.6}Producto de un escalar por un vector}{9}
+\contentsline {section}{\numberline {4}Media}{10}
+\contentsline {section}{\numberline {5}Operaciones con potencias}{11}
+\contentsline {subsection}{\numberline {5.1}Potencia b\IeC {\'a}sica}{11}
+\contentsline {subsection}{\numberline {5.2}Multiplicaci\IeC {\'o}n de potencias}{12}
+\contentsline {subsection}{\numberline {5.3}Divisi\IeC {\'o}n de potencias}{13}
