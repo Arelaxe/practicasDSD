@@ -1,0 +1,49 @@
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <title>Formulario</title>
+    </head>
+    <body>
+        <h1>Aquí puede cambiar el valor de los sensores</h1>
+        <hr>
+        <form action="javascript:void(0);" onsubmit="javascript:cambiarTemperatura();">
+            <label for="temperatura">Indique la temperatura: </label>
+            <input type="text" id="temperatura_valor"/>
+            <input type="submit" value="Cambiar">
+        </form>
+
+        <form action="javascript:void(0);" onsubmit="javascript:cambiarLuminosidad();">
+            <label for="temperatura">Indique la luminosidad: </label>
+            <input type="text" id="luminosidad_valor"/>
+            <input type="submit" value="Cambiar">
+        </form>
+    </body>
+    <style>
+        body{
+            text-align: center;
+            font-family: Arial, Helvetica, sans-serif;
+            background-color: lightgoldenrodyellow;
+        }
+    </style>
+    <script src="/socket.io/socket.io.js"></script>
+    <script type="text/javascript">
+        var socket = io.connect('http://localhost:8081');
+
+        function cambiarTemperatura(){
+            var d = new Date();
+            var temp = document.getElementById('temperatura_valor').value;
+            var variable = "Temperatura";
+            socket.emit('add_cambio', {variable: variable, value: temp, date:d});
+            socket.emit('add_nueva_temperatura', {temperatura:temp});
+        }
+
+        function cambiarLuminosidad(){
+            var d = new Date();
+            var lum = document.getElementById('luminosidad_valor').value;
+            var variable = "Luminosidad";
+            socket.emit('add_cambio', {variable: variable, value: lum, date:d});
+            socket.emit('add_nueva_luminosidad', {luminosidad:lum});
+        }
+
+    </script>
+</html>

@@ -1,0 +1,362 @@
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <title>Vista Usuario</title>
+    </head>
+    <body>
+        <div id="alarmas" class="item">
+            <h1>Alarmas</h1>
+            <hr>
+            <div id="persianayac" class="alerta"></div>
+            <div id="alarma_tem" class="alerta"></div>
+            <div id="alarma_lum" class="alerta"></div>
+        </div>
+        <div id="grid">
+        <div class="item">
+        <h1>Usuarios conectados</h1>
+        <hr>
+        <div id="lista_usuarios"></div>
+        </div>
+        <div class="item">
+        <h1>Sensores</h1>
+        <hr>
+        <p>Temperatura: <span id="tem"></span> grados</p>
+        <p>Luminosidad: <span id="lum"></span> %</p>
+        <p>A/C: <span id="ac"></span></p>
+        <p>Persiana: <span id="pers"></span></p>
+        </div>
+        <div class="item">
+        <h1>Historial de cambios</h1>
+        <hr>
+        <div id="cambios"></div>
+        <form action="javascript:void(0);" onsubmit="javascript:borrarHistorial();">
+        <input type="submit" value="Borrar Historial"/>
+        </form>
+        </div>
+        <div class="item">
+        <h1>Actuadores</h1>
+        <hr>
+        <form action="javascript:void(0);" onsubmit="javascript:ONOFFAC();">
+            <label for="ac_label">Indique el estado de la A/C: </label>
+            <select id="ac_elegir">
+                <option value="ON">ON</option>
+                <option value="OFF">OFF</option>
+            </select>
+            <input type="submit" value="Cambiar">
+        </form>
+
+        <form action="javascript:void(0);" onsubmit="javascript:ONOFFPersiana();">
+            <label for="persiana_label">Indique el estado de la persiana: </label>
+            <select id="persiana_cambiar">
+                <option value="ON">ON</option>
+                <option value="OFF">OFF</option>
+            </select>
+            <input type="submit" value="Cambiar">
+        </form>
+        </div>
+        </div>
+    </body>
+    <style>
+        body{
+            padding: 1%;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        #grid {
+            padding: 1%;
+            display: grid;
+            grid-gap: 5px;
+            grid-template-columns: 50% 50%;
+            grid-template-rows: auto auto;
+        }
+
+        .item {
+            padding: 1%;
+            background-color: bisque;
+            border-style: solid;
+            border-width: 3px;
+            border-color: black;
+            text-align: center;
+            border-radius: 15px;
+        }
+
+        .alerta {
+            color: red;
+            font-size: 150%;
+        }
+
+        #alarmas{
+            background-color: lightgoldenrodyellow;
+        }
+
+    </style>
+    <script src="/socket.io/socket.io.js"></script>
+    <script type="text/javascript">
+        var serviceURL = document.URL;
+        var socket = io.connect('http://localhost:8081');
+
+        // Funciones inicializar
+
+        function inicializarAC(data) {
+            var element = document.getElementById('ac');
+            var num = data.length - 1;
+            if (num>0)
+                element.innerHTML = data[num].ac;
+            else
+                element.innerHTML = "OFF";
+
+            if(document.getElementById('ac').innerHTML == "OFF"){
+                document.getElementById('ac').style.color = "red";
+            }
+            else{
+                document.getElementById('ac').style.color = "green";
+            }
+        }
+
+        function inicializarPersiana(data){
+            var element = document.getElementById('pers');
+            var num = data.length - 1;
+            if (num>0)
+                element.innerHTML = data[num].persiana;
+            else 
+                element.innerHTML = "OFF";
+                if (document.getElementById('pers').innerHTML == "OFF" && document.getElementById('ac').innerHTML == "OFF"){
+                document.getElementById('persianayac').innerHTML = "Atención, persiana y A/C apagados";
+            }
+            else{
+                document.getElementById('persianayac').innerHTML = "";
+            }
+
+            if(document.getElementById('pers').innerHTML == "OFF"){
+                document.getElementById('pers').style.color = "red";
+            }
+            else{
+                document.getElementById('pers').style.color = "green";
+            }
+        }
+
+        function inicializarTemperatura(data){
+            var element = document.getElementById('tem');
+            var num = data.length - 1;
+            if (num>0){
+                element.innerHTML = data[num].temperatura;
+                if(data[num].temperatura > 35){
+                    document.getElementById('alarma_tem').innerHTML = "Atención, temperatura más alta que el umbral";
+                }
+                else if (data[num].temperatura<20){
+                    document.getElementById('alarma_tem').innerHTML = "Atención, temperatura más baja que el umbral";
+                }
+                else{
+                    document.getElementById('alarma_tem').innerHTML = "";
+                }
+            }
+            else 
+                element.innerHTML = "30";
+        }
+
+        function inicializarLuminosidad(data){
+            var element = document.getElementById('lum');
+            var num = data.length - 1;
+            if (num>0){
+                element.innerHTML = data[num].luminosidad;
+                if (data[num].luminosidad>80){
+                    document.getElementById('alarma_lum').innerHTML = "Atención, luminosidad más alta del umbral";
+                    var off = "OFF";
+                    socket.emit('apagar_persiana', {persiana:off});
+                }
+                else if (data[num].luminosidad<25){
+                    document.getElementById('alarma_lum').innerHTML = "Atención, luminosidad más baja del umbral";
+                }
+                else{
+                    document.getElementById('alarma_lum').innerHTML = "";
+                }
+            }
+            else 
+                element.innerHTML = "30";
+        }
+
+        // Funciones actualizar
+        
+        function actualizarLista (usuarios){
+            var listContainer = document.getElementById('lista_usuarios');
+            listContainer.innerHTML  = '';
+            var listElement = document.createElement('ul');
+            listContainer.appendChild(listElement);
+            var num = usuarios.length;
+            for (var i=0; i<num; i++){
+                var listItem = document.createElement('li');
+                listItem.innerHTML = usuarios[i].address+":"+usuarios[i].port;
+                listElement.appendChild(listItem);
+            }
+        }
+
+        function actualizarCambios(data){
+            var listContainer = document.getElementById('cambios');
+            listContainer.innerHTML = '';
+            var listElement = document.createElement('ul');
+            listContainer.appendChild(listElement);
+            var num = data.length;
+            for (var i=0; i<num; i++) {
+                var listItem = document.createElement('li');
+                listItem.innerHTML = data[i].variable + " cambiado/a a " + data[i].value + " por " + data[i].host + ":" + data[i].port + " a las " + data[i].date;
+                listElement.appendChild(listItem);
+            }
+            if (document.getElementById('pers').innerHTML == "OFF" && document.getElementById('ac').innerHTML == "OFF"){
+                document.getElementById('persianayac').innerHTML = "Atención, persiana y A/C apagados";
+            }
+            else{
+                document.getElementById('persianayac').innerHTML = "";
+            }
+        }
+
+        function actualizarAC(data){
+            var element = document.getElementById('ac');
+            element.innerHTML = data.ac;
+
+            if(document.getElementById('ac').innerHTML == "OFF"){
+                document.getElementById('ac').style.color = "red";
+            }
+            else{
+                document.getElementById('ac').style.color = "green";
+            }
+        }
+
+        function actualizarPersiana(data){
+            var element = document.getElementById('pers');
+            element.innerHTML = data.persiana;
+
+            if(document.getElementById('pers').innerHTML == "OFF"){
+                document.getElementById('pers').style.color = "red";
+            }
+            else{
+                document.getElementById('pers').style.color = "green";
+            }
+        }
+
+        function actualizarTemperatura(data){
+            var element = document.getElementById('tem');
+            element.innerHTML = data.temperatura;
+            if (data.temperatura>35){
+                document.getElementById('alarma_tem').innerHTML = "Atención, temperatura más alta que el umbral";
+                var off = "OFF";
+                socket.emit('apagar_persiana', {persiana:off});
+            }
+            else if (data.temperatura<20){
+                document.getElementById('alarma_tem').innerHTML = "Atención, temperatura más baja que el umbral";
+            }
+            else{
+                document.getElementById('alarma_tem').innerHTML = "";
+            }
+        }
+
+        function actualizarLuminosidad(data){
+            var element = document.getElementById('lum');
+            element.innerHTML = data.luminosidad;
+
+            if (data.luminosidad>80){
+                document.getElementById('alarma_lum').innerHTML = "Atención, luminosidad más alta del umbral";
+                var off = "OFF";
+                socket.emit('apagar_persiana', {persiana:off});
+            }
+            else if (data.luminosidad<25){
+                document.getElementById('alarma_lum').innerHTML = "Atención, luminosidad más baja del umbral";
+            }
+            else{
+                document.getElementById('alarma_lum').innerHTML = "";
+            }
+        }
+
+        // Funciones de cambio
+
+        function apagarPersiana(){
+            var element = document.getElementById('pers');
+            element.innerHTML = "OFF";
+            element.style.color = "red";
+        }
+
+        function ONOFFAC() {
+            var d = new Date();
+            var on_off = document.getElementById('ac_elegir').value;
+            var variable = "Conector A/C";
+            socket.emit('add_cambio', {variable: variable, value: on_off, date:d});
+            socket.emit('add_nueva_ac', {ac:on_off});
+        }
+
+        function ONOFFPersiana() {
+            var d = new Date();
+            var on_off = document.getElementById('persiana_cambiar').value;
+            var variable = "Persiana";
+            socket.emit('add_cambio', {variable: variable, value: on_off, date:d});
+            socket.emit('add_nueva_persiana', {persiana:on_off});
+        }
+
+        function borrarHistorial(){
+            data = {};
+            data.ac = document.getElementById('ac').innerHTML;
+            data.persiana = document.getElementById('pers').innerHTML;
+            data.temperatura = document.getElementById('tem').innerHTML;
+            data.luminosidad = document.getElementById('lum').innerHTML;
+            socket.emit('borrar', data);
+            document.getElementById('cambios').innerHTML = "";
+        }
+
+        // socket.on
+        
+        socket.on('all-connections', function(data){
+            actualizarLista(data);
+        });
+
+        socket.on('init_luminosidad', function(data){
+            inicializarLuminosidad(data);
+        });
+
+        socket.on('init_temperatura', function(data){
+            inicializarTemperatura(data);
+        });
+
+        socket.on('init_ac', function(data){
+            inicializarAC(data);
+        });
+
+        socket.on('init_persiana', function(data){
+            inicializarPersiana(data);
+        });
+
+        socket.on('update_valores', function(data){
+            socket.emit('poner_valor', data);
+            actualizarValores(data);
+        });
+
+        socket.on('update_temperatura', function(data){
+            actualizarTemperatura(data);
+        });
+
+        socket.on('update_persiana', function(data){
+            actualizarPersiana(data);
+        });
+
+        socket.on('update_luminosidad', function(data){
+            actualizarLuminosidad(data);
+        });
+
+        socket.on('update_ac', function(data){
+            actualizarAC(data);
+        });
+
+        socket.on('update_cambios', function(data){
+            socket.emit('poner', data);
+            socket.emit('obtener', data);
+        });
+
+        socket.on('obten', function(data){
+            actualizarCambios(data);
+        });
+
+        socket.on('disconnect', function(){
+            actualizarCambios({});
+        });
+
+        socket.on('persiana_off', function(data){
+            apagarPersiana();
+        });
+    </script>
+</html>
